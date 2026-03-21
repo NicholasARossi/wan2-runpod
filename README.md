@@ -22,7 +22,27 @@ curl -X POST "https://api.runpod.ai/v2/{ENDPOINT_ID}/run" \
   -d '{
     "input": {
       "image_base64": "<base64_encoded_image>",
-      "prompt": "titJob, paizuri, girlMove, gather She is being tittyfucked...",
+      "prompt": "A cat slowly turns its head and blinks at the camera",
+      "width": 480,
+      "height": 832,
+      "length": 81,
+      "steps": 8,
+      "seed": 42,
+      "cfg": 2.0
+    }
+  }'
+```
+
+With custom LoRAs:
+
+```bash
+curl -X POST "https://api.runpod.ai/v2/{ENDPOINT_ID}/run" \
+  -H "Authorization: Bearer ${RUNPOD_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": {
+      "image_base64": "<base64_encoded_image>",
+      "prompt": "The person walks forward confidently, hair blowing in the wind",
       "width": 480,
       "height": 832,
       "length": 81,
@@ -31,8 +51,8 @@ curl -X POST "https://api.runpod.ai/v2/{ENDPOINT_ID}/run" \
       "cfg": 2.0,
       "lora_pairs": [
         {
-          "high": "WAN-2.2-I2V-POV-Titfuck-Paizuri-HIGH-v1.0.safetensors",
-          "low": "WAN-2.2-I2V-POV-Titfuck-Paizuri-LOW-v1.0.safetensors",
+          "high": "my-custom-lora-HIGH.safetensors",
+          "low": "my-custom-lora-LOW.safetensors",
           "high_weight": 1.0,
           "low_weight": 1.0
         }
