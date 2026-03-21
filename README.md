@@ -1,3 +1,5 @@
+[![Runpod](https://api.runpod.io/badge/NicholasARossi/wan2-runpod)](https://console.runpod.io/hub/NicholasARossi/wan2-runpod)
+
 # wan2-runpod
 
 Custom RunPod serverless endpoint for Wan 2.2 image-to-video generation with LoRA support.

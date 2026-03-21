@@ -3,7 +3,7 @@ set -e
 
 echo "=== wan2-runpod entrypoint ==="
 echo "Starting ComfyUI in background..."
-python /ComfyUI/main.py --listen --use-sage-attention &
+python3 /ComfyUI/main.py --listen &
 
 echo "Waiting for ComfyUI to be ready..."
 max_wait=120
@@ -26,4 +26,4 @@ if [ $wait_count -ge $max_wait ]; then
 fi
 
 echo "Starting RunPod handler..."
-exec python handler.py
+exec python3 handler.py

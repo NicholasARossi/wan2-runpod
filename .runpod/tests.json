@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "basic_i2v_generation",
+      "input": {
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png",
+        "prompt": "The dice slowly rolls across the table",
+        "width": 480,
+        "height": 480,
+        "length": 33,
+        "steps": 4,
+        "cfg": 2.0
+      },
+      "timeout": 300000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA L40S",
+    "gpuCount": 1,
+    "env": [
+      {
+        "key": "SERVER_ADDRESS",
+        "value": "127.0.0.1"
+      }
+    ],
+    "allowedCudaVersions": [
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4",
+      "12.3",
+      "12.2"
+    ]
+  }
+}

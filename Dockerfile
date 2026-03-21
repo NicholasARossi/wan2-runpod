@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1
 
 # System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git wget curl \
+    python3 python3-pip python3-venv git wget curl ffmpeg \
     libgl1-mesa-glx libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,8 +39,8 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     cd ComfyUI-WanVideoWrapper && pip3 install --no-cache-dir -r requirements.txt
 
-# SageAttention (for --use-sage-attention flag)
-RUN pip3 install --no-cache-dir sageattention 2>/dev/null || echo "SageAttention not available, will use default attention"
+# Ensure model directories exist
+RUN mkdir -p /ComfyUI/models/text_encoders
 
 # Download models (baked into image to avoid cold-start downloads)
 # Wan 2.2 I2V diffusion models (fp8 quantized, ~14GB each)

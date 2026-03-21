@@ -16,7 +16,7 @@ Workflow node map (wan22_i2v.json):
   193  WanVideoClipVision  — encode image with CLIP
   122  WanVideoModelLoader — HIGH noise diffusion model
   549  WanVideoModelLoader — LOW noise diffusion model
-  525  EnhancedBlockSwap   — VRAM optimization
+  525  BlockSwap           — VRAM optimization (block swap to CPU)
   555  WanVideoSetBlockSwap— apply block swap to HIGH model
   279  WanVideoLoraSelectMulti — HIGH noise LoRAs (lora_0=lightx2v, lora_1-4=user)
   553  WanVideoLoraSelectMulti — LOW noise LoRAs  (lora_0=lightx2v, lora_1-4=user)
