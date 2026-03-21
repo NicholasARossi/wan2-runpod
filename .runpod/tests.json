@@ -3,8 +3,8 @@
     {
       "name": "basic_i2v_generation",
       "input": {
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png",
-        "prompt": "The dice slowly rolls across the table",
+        "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeElEQVR4nO3PQQkAMAzAwEqrf1ObiD2OQSACLnN2v264oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0ILHLvlF8VqfrMBeAAAAAElFTkSuQmCC",
+        "prompt": "The red square slowly rotates",
         "width": 480,
         "height": 480,
         "length": 33,
