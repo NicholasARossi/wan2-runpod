@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "title": "Wan 2.2 I2V RunPod Serverless Endpoint — Custom Fork",
+    "version": "1.0",
+    "date": "2026-03-21",
+    "scope": "Build a reliable, well-tested RunPod serverless endpoint for Wan 2.2 image-to-video generation with LoRA support. Forked from wlsdml1114/generate_video (which has broken ksampler, missing parameter wiring, poor error handling). Our fork fixes all known issues, adds local testing capability, and produces a Docker image deployable to RunPod serverless.",
+    "forked_from": "https://github.com/wlsdml1114/generate_video",
+    "non_goals": [
+      "Text-to-video (T2V) — we only need image-to-video (I2V)",
+      "Training or fine-tuning models — we use pre-trained Wan 2.2 + community LoRAs",
+      "Real-time generation — serverless is async (submit job, poll for result)",
+      "GUI or web interface — API-only, consumed by our zone2 pipeline",
+      "Supporting GPUs below 24GB VRAM — targeting A100/4090/5090"
+    ],
+    "assumptions": [
+      "RunPod account with API key and serverless endpoint access",
+      "Network volume with LoRA .safetensors files at /runpod-volume/loras/",
+      "Docker Hub or GitHub Container Registry for pushing custom images",
+      "ComfyUI as the inference backend (runs inside the Docker container)",
+      "Mac Studio M2 Ultra 64GB available for local workflow validation (slow but functional with GGUF models)"
+    ],
+    "hardware": {
+      "production": "RunPod serverless — A100 80GB or RTX 4090 24GB",
+      "local_testing": "Mac Studio M2 Ultra 64GB — ComfyUI with GGUF quantized models (Q5_K_M), ~15-30 min per video but validates workflow JSON correctness"
+    },
+    "success_criteria": {
+      "primary": "Submit a job via RunPod API with base64 image + prompt + LoRA pairs, get back a base64 video with visible motion/animation",
+      "stretch": "Full end-to-end test: local ComfyUI validates workflow JSON, same workflow deploys to RunPod and produces identical results",
+      "reliability": "Zero HTTP 400 errors from ComfyUI — all parameter validation happens in handler before queue_prompt"
+    }
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Local ComfyUI Setup & Workflow Validation",
+      "description": "Get ComfyUI running locally on Mac Studio with GGUF-quantized Wan 2.2 models. Validate that the workflow JSON we will use in production actually works — catch node errors, missing custom nodes, and parameter issues locally before deploying to RunPod.",
+      "tasks": [
+        {
+          "id": "1.1-install-comfyui",
+          "title": "Install ComfyUI on Mac Studio",
+          "description": "Clone ComfyUI, install Python dependencies, verify it starts and serves on port 8188. Install with MPS (Metal) backend support.",
+          "acceptance": [
+            "ComfyUI starts without errors",
+            "http://127.0.0.1:8188/ returns 200",
+            "MPS backend is detected (or CPU fallback works)"
+          ],
+          "deps": [],
+          "effort": "low"
+        },
+        {
+          "id": "1.2-install-custom-nodes",
+          "title": "Install required ComfyUI custom nodes",
+          "description": "Install the same custom nodes used by the production workflow: ComfyUI-GGUF, ComfyUI-KJNodes, ComfyUI-VideoHelperSuite, ComfyUI-WanVideoWrapper. These are needed for the v1.0.6-style workflow that uses WanVideoSampler, WanVideoModelLoader, etc.",
+          "acceptance": [
+            "ComfyUI-GGUF installed and loads",
+            "ComfyUI-KJNodes installed (for ImageResizeKJv2, INTConstant, etc.)",
+            "ComfyUI-VideoHelperSuite installed (for VHS_VideoCombine)",
+            "ComfyUI-WanVideoWrapper installed (for WanVideoSampler, WanVideoModelLoader, etc.)",
+            "ComfyUI restarts cleanly with all nodes available"
+          ],
+          "deps": ["1.1-install-comfyui"],
+          "effort": "medium"
+        },
+        {
+          "id": "1.3-download-gguf-models",
+          "title": "Download GGUF-quantized Wan 2.2 I2V models",
+          "description": "Download Q5_K_M GGUF variants of Wan 2.2 I2V high-noise and low-noise models from HuggingFace. Also download the text encoder, VAE, and CLIP vision model. Place in correct ComfyUI model directories.",
+          "acceptance": [
+            "Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf in models/unet/ or models/diffusion_models/",
+            "Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf downloaded",
+            "umt5-xxl text encoder available (bf16 or fp8)",
+            "Wan2_1_VAE available",
+            "clip_vision_h.safetensors available",
+            "lightx2v 4-step LoRAs (high_noise_model.safetensors, low_noise_model.safetensors) in models/loras/"
+          ],
+          "deps": ["1.2-install-custom-nodes"],
+          "effort": "medium"
+        },
+        {
+          "id": "1.4-create-local-workflow",
+          "title": "Create GGUF-adapted workflow JSON for local testing",
+          "description": "Adapt the production workflow (new_Wan22_api.json from v1.0.6) to use GGUF model loaders instead of the standard WanVideoModelLoader. The GGUF node replaces the safetensor loader but the rest of the workflow (sampling, encoding, LoRA, output) stays the same. This lets us validate the workflow structure locally.",
+          "acceptance": [
+            "workflow/wan22_local_test.json created",
+            "Uses UnetLoaderGGUF instead of WanVideoModelLoader for the diffusion models",
+            "All other nodes match the production workflow",
+            "Workflow loads in ComfyUI without errors (check /prompt endpoint or GUI)"
+          ],
+          "deps": ["1.3-download-gguf-models"],
+          "effort": "high"
+        },
+        {
+          "id": "1.5-local-generation-test",
+          "title": "Generate a test video locally",
+          "description": "Submit the local workflow to ComfyUI via its API (POST /prompt) with a test image. Verify that a video is produced. This will be slow (30+ min) but proves the workflow JSON is valid and all nodes connect properly.",
+          "acceptance": [
+            "POST /prompt accepts the workflow without HTTP 400",
+            "ComfyUI processes the workflow (may take 15-60 min on Mac)",
+            "Output contains a .mp4 video file",
+            "Video has visible frames (not black/corrupted)"
+          ],
+          "deps": ["1.4-create-local-workflow"],
+          "effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Production Handler & Workflow",
+      "description": "Build the production handler.py and workflow JSON that will run inside the RunPod Docker container. Fix all the issues from the upstream repo: proper parameter wiring, input validation, clear error messages, clean LoRA handling.",
+      "tasks": [
+        {
+          "id": "2.1-production-workflow",
+          "title": "Create production workflow JSON",
+          "description": "Based on the v1.0.6 new_Wan22_api.json but cleaned up. This uses the standard WanVideoModelLoader (fp8 safetensors, not GGUF) since production runs on NVIDIA GPUs. Key nodes: WanVideoModelLoader (HIGH + LOW), WanVideoSampler (two-pass), WanVideoLoraSelectMulti (HIGH + LOW), WanVideoContextOptions, WanVideoTextEncode, WanVideoImageToVideoEncode, WanVideoDecode, VHS_VideoCombine.",
+          "acceptance": [
+            "workflow/wan22_i2v.json created",
+            "Uses fp8 safetensor model files (same as v1.0.6)",
+            "lightx2v 4-step LoRA in lora_0 slot",
+            "lora_1 through lora_4 slots available for user LoRAs",
+            "All node IDs documented in handler comments"
+          ],
+          "deps": [],
+          "effort": "medium"
+        },
+        {
+          "id": "2.2-handler",
+          "title": "Write handler.py — the RunPod serverless handler",
+          "description": "Clean rewrite of the handler. Fixes from upstream: (1) All params use .get() with sane defaults — never crash on missing input. (2) seed, cfg, steps are properly wired to workflow nodes. (3) Input validation before queue_prompt — catch bad params early with clear errors. (4) Base64 image handling is robust. (5) LoRA pairs properly applied to WanVideoLoraSelectMulti nodes. (6) Better logging with request IDs.",
+          "acceptance": [
+            "handler.py accepts: image (base64/url/path), prompt, negative_prompt, width (default 480), height (default 832), length (default 81), steps (default 8), seed (default random), cfg (default 2.0), context_overlap (default 48), lora_pairs (default [])",
+            "All params validated before submitting to ComfyUI",
+            "seed/cfg/steps properly written to workflow node inputs",
+            "LoRA pairs applied to nodes 279 (HIGH) and 553 (LOW), lora_1 through lora_4",
+            "Returns {video: base64_string} on success",
+            "Returns {error: descriptive_message} on failure — never a raw traceback",
+            "Width/height auto-rounded to nearest 16"
+          ],
+          "deps": ["2.1-production-workflow"],
+          "effort": "high"
+        },
+        {
+          "id": "2.3-entrypoint",
+          "title": "Write entrypoint.sh",
+          "description": "Shell script that starts ComfyUI in the background, waits for it to be ready, then starts the handler. Same pattern as upstream but with better error handling and timeout logging.",
+          "acceptance": [
+            "entrypoint.sh starts ComfyUI with --listen --use-sage-attention",
+            "Waits up to 120s for ComfyUI HTTP to respond",
+            "Exits with error if ComfyUI fails to start",
+            "Starts handler.py as foreground process"
+          ],
+          "deps": [],
+          "effort": "low"
+        },
+        {
+          "id": "2.4-extra-model-paths",
+          "title": "Write extra_model_paths.yaml",
+          "description": "ComfyUI config that maps model directories, including the RunPod network volume at /runpod-volume/ for user LoRAs and any custom models.",
+          "acceptance": [
+            "extra_model_paths.yaml maps /runpod-volume/loras/ for LoRA discovery",
+            "Maps /runpod-volume/models/ for diffusion models",
+            "Standard ComfyUI model paths included"
+          ],
+          "deps": [],
+          "effort": "low"
+        },
+        {
+          "id": "2.5-client",
+          "title": "Write generate_video_client.py — local API client",
+          "description": "Clean Python client for submitting jobs to the RunPod endpoint. Handles base64 encoding, job submission, polling, and video download. This replaces the runpod_client.py in zone2/image_gen/ with a standalone version that can be used independently.",
+          "acceptance": [
+            "GenerateVideoClient class with submit_job, wait_for_completion, save_video methods",
+            "create_video_from_image convenience method",
+            "Proper base64 encoding of input images",
+            "Configurable poll interval and timeout",
+            "CLI mode: python generate_video_client.py --image test.png --prompt 'motion description'"
+          ],
+          "deps": [],
+          "effort": "medium"
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Docker Image & RunPod Deployment",
+      "description": "Build the Docker image with all dependencies baked in, push to registry, and deploy as a RunPod serverless endpoint.",
+      "tasks": [
+        {
+          "id": "3.1-dockerfile",
+          "title": "Write Dockerfile",
+          "description": "Based on the v1.0.6 Dockerfile but cleaned up. Uses a suitable CUDA base image, installs ComfyUI + custom nodes, downloads model weights, copies handler/workflow/entrypoint. Models baked into the image to avoid cold-start downloads.",
+          "acceptance": [
+            "Dockerfile builds successfully (docker build)",
+            "Base image has CUDA 12.x + Python 3.10+",
+            "ComfyUI + required custom nodes installed",
+            "Wan 2.2 fp8 model weights downloaded during build",
+            "lightx2v 4-step LoRAs downloaded during build",
+            "CLIP vision, T5 text encoder, VAE downloaded during build",
+            "handler.py, workflow/, entrypoint.sh, extra_model_paths.yaml copied in",
+            "Image size documented (expected ~20-30GB)"
+          ],
+          "deps": ["2.1-production-workflow", "2.2-handler", "2.3-entrypoint", "2.4-extra-model-paths"],
+          "effort": "high"
+        },
+        {
+          "id": "3.2-local-docker-test",
+          "title": "Test Docker image locally (optional — needs NVIDIA GPU)",
+          "description": "If an NVIDIA GPU is available, test the Docker image locally with nvidia-docker. If not, skip this and test directly on RunPod. On Mac, we can at least verify the image builds and the entrypoint script logic.",
+          "acceptance": [
+            "Docker image builds without errors",
+            "If NVIDIA GPU available: container starts, ComfyUI responds, handler accepts a test job",
+            "If no NVIDIA GPU: build succeeds, entrypoint.sh is executable, handler.py imports cleanly"
+          ],
+          "deps": ["3.1-dockerfile"],
+          "effort": "medium"
+        },
+        {
+          "id": "3.3-push-image",
+          "title": "Push Docker image to registry",
+          "description": "Push the built image to Docker Hub or GitHub Container Registry so RunPod can pull it. Tag with version number.",
+          "acceptance": [
+            "Image pushed to registry with tag v1.0.0",
+            "Image is pullable: docker pull <registry>/<image>:v1.0.0",
+            "Registry URL documented for RunPod template creation"
+          ],
+          "deps": ["3.2-local-docker-test"],
+          "effort": "low"
+        },
+        {
+          "id": "3.4-runpod-endpoint",
+          "title": "Create RunPod serverless endpoint with custom image",
+          "description": "Create a new RunPod serverless endpoint using our custom Docker image. Configure with appropriate GPU type, network volume for LoRAs, and scaling settings.",
+          "acceptance": [
+            "Endpoint created on RunPod dashboard",
+            "Uses our custom Docker image from registry",
+            "Network volume mounted at /runpod-volume/",
+            "GPU type: 48GB+ (A100 or equivalent)",
+            "Max workers: 1-3, idle timeout: 5s",
+            "Endpoint ID documented"
+          ],
+          "deps": ["3.3-push-image"],
+          "effort": "low"
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "title": "End-to-End Testing & Integration",
+      "description": "Test the full pipeline end-to-end: submit real video generation jobs, verify output quality, test LoRA loading, and integrate with the zone2 pipeline.",
+      "tasks": [
+        {
+          "id": "4.1-health-check",
+          "title": "Verify endpoint health and worker readiness",
+          "description": "Hit the /health endpoint, verify workers spin up, confirm ComfyUI is responding inside the container.",
+          "acceptance": [
+            "GET /health returns ready workers",
+            "Worker logs show ComfyUI started successfully",
+            "No custom node import errors in logs"
+          ],
+          "deps": ["3.4-runpod-endpoint"],
+          "effort": "low"
+        },
+        {
+          "id": "4.2-basic-generation",
+          "title": "Generate video without LoRAs",
+          "description": "Submit a basic job: test image + simple motion prompt, no LoRAs. Verify the returned video has actual motion/animation (unlike our previous static results).",
+          "acceptance": [
+            "Job completes without errors (status: COMPLETED)",
+            "Base64 video decodes to valid .mp4",
+            "Video has visible motion (not static frames)",
+            "Video is correct resolution and frame count"
+          ],
+          "deps": ["4.1-health-check"],
+          "effort": "medium"
+        },
+        {
+          "id": "4.3-lora-generation",
+          "title": "Generate video with LoRAs",
+          "description": "Submit a job with our titfuck LoRA pair (HIGH + LOW). Use appropriate trigger words in the prompt. Verify the LoRA effect is visible in the output.",
+          "acceptance": [
+            "Job completes with 1 LoRA pair specified",
+            "No 'LoRA not found' or 'Value not in list' errors",
+            "Output video shows LoRA-influenced motion/content",
+            "LoRA filenames correctly resolve from /runpod-volume/loras/"
+          ],
+          "deps": ["4.2-basic-generation"],
+          "effort": "medium"
+        },
+        {
+          "id": "4.4-parameter-validation",
+          "title": "Test parameter edge cases",
+          "description": "Test various parameter combinations to verify handler robustness: missing params (should use defaults), bad values (should return error not crash), different resolutions, different step counts, random seeds.",
+          "acceptance": [
+            "Missing seed/cfg/steps: uses defaults, job succeeds",
+            "Invalid width (e.g. 0, negative): returns descriptive error",
+            "Non-16-aligned resolution: auto-rounds, job succeeds",
+            "Different step counts (4, 8, 15, 20): all work",
+            "No crashes or raw tracebacks in any test"
+          ],
+          "deps": ["4.2-basic-generation"],
+          "effort": "medium"
+        },
+        {
+          "id": "4.5-zone2-integration",
+          "title": "Update zone2 runpod_client.py to use new endpoint",
+          "description": "Update the zone2/image_gen/runpod_client.py to point at our new custom endpoint. Verify the existing generate_scene_library.py pipeline works end-to-end with the new endpoint.",
+          "acceptance": [
+            "runpod_client.py updated with new endpoint ID",
+            "generate_scene_library.py can submit a job and get a video back",
+            "frame_extractor.py can extract frames from the result"
+          ],
+          "deps": ["4.3-lora-generation"],
+          "effort": "medium"
+        }
+      ]
+    }
+  ]
+}
