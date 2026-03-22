@@ -39,35 +39,24 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     cd ComfyUI-WanVideoWrapper && pip3 install --no-cache-dir -r requirements.txt
 
-# Ensure model directories exist
-RUN mkdir -p /ComfyUI/models/text_encoders
-
-# Download models (baked into image to avoid cold-start downloads)
-# Wan 2.2 I2V diffusion models (fp8 quantized, ~14GB each)
-RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
-    -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
-
-RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
-    -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
-
-# lightx2v 4-step acceleration LoRAs
-RUN wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/high_noise_model.safetensors \
-    -O /ComfyUI/models/loras/high_noise_model.safetensors
-
-RUN wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/low_noise_model.safetensors \
-    -O /ComfyUI/models/loras/low_noise_model.safetensors
-
-# CLIP vision
-RUN wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors \
-    -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors
-
-# Text encoder (T5 XXL)
-RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors \
-    -O /ComfyUI/models/text_encoders/umt5-xxl-enc-bf16.safetensors
-
-# VAE
-RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors \
-    -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors
+# Download all models in parallel (baked into image to avoid cold-start downloads)
+# ~40GB total — parallel downloads keep build under 30min limit
+RUN mkdir -p /ComfyUI/models/text_encoders && \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
+        -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
+        -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & \
+    wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/high_noise_model.safetensors \
+        -O /ComfyUI/models/loras/high_noise_model.safetensors & \
+    wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/low_noise_model.safetensors \
+        -O /ComfyUI/models/loras/low_noise_model.safetensors & \
+    wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors \
+        -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors & \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors \
+        -O /ComfyUI/models/text_encoders/umt5-xxl-enc-bf16.safetensors & \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors \
+        -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors & \
+    wait
 
 # Copy our handler, workflow, and config
 WORKDIR /app
