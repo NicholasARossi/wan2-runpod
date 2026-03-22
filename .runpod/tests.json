@@ -3,7 +3,7 @@
     {
       "name": "health_check",
       "input": {
-        "prompt": "test"
+        "health_check": true
       },
       "timeout": 300000
     }
