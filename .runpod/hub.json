@@ -6,12 +6,8 @@
   "config": {
     "runsOn": "GPU",
     "containerDiskInGb": 100,
-    "gpuIds": [
-      "NVIDIA GeForce RTX 4090",
-      "NVIDIA RTX A5000",
-      "NVIDIA L40",
-      "NVIDIA L40S"
-    ],
+    "gpuCount": 1,
+    "gpuIds": "ADA_24,AMPERE_24,ADA_48_PRO",
     "presets": [
       {
         "name": "Default (480x832, 8 steps)",
