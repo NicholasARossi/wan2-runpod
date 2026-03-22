@@ -15,7 +15,7 @@
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuTypeId": "NVIDIA L40S",
     "gpuCount": 1,
     "executionTimeout": 600,
     "env": [
