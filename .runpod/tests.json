@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "health_check",
+      "input": {
+        "prompt": "test"
+      },
+      "timeout": 300000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA L40S",
+    "gpuCount": 1,
+    "env": [
+      {
+        "key": "SERVER_ADDRESS",
+        "value": "127.0.0.1"
+      }
+    ],
+    "allowedCudaVersions": [
+      "12.8",
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4"
+    ]
+  }
+}
