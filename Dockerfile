@@ -61,6 +61,7 @@ RUN mkdir -p /ComfyUI/models/text_encoders && \
 # Copy our handler, workflow, and config
 WORKDIR /app
 COPY handler.py .
+COPY handler_core.py .
 COPY workflow/ workflow/
 COPY extra_model_paths.yaml /ComfyUI/extra_model_paths.yaml
 COPY entrypoint.sh .
