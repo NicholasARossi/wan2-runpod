@@ -1,0 +1,193 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "input_image.jpg",
+      "upload": "image"
+    },
+    "_meta": {"title": "LoadImage"}
+  },
+  "2": {
+    "class_type": "ImageResizeKJv2",
+    "inputs": {
+      "image": ["1", 0],
+      "width": 832,
+      "height": 480,
+      "upscale_method": "lanczos",
+      "keep_proportion": "crop",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 2,
+      "device": "cpu",
+      "per_batch": 0
+    },
+    "_meta": {"title": "ImageResize"}
+  },
+  "3": {
+    "class_type": "129378e3-d7f3-4d42-8b64-8458af618b1f",
+    "inputs": {
+      "unet_name": "Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors",
+      "unet_name_1": "Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors"
+    },
+    "_meta": {"title": "Safetensors_Models"}
+  },
+  "4": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["3", 0],
+      "lora_name": "HIGH\\Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": {"title": "Lightx2v_Lora_High"}
+  },
+  "5": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["3", 1],
+      "lora_name": "LOW\\Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": {"title": "Lightx2v_Lora_Low"}
+  },
+  "6": {
+    "class_type": "9f073b94-78a6-4851-9107-2606d7e3c50b",
+    "inputs": {
+      "model": ["4", 0],
+      "model_1": ["5", 0],
+      "lora_name_2": "HIGH\\SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
+      "lora_name_3": "LOW\\SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "vae_name": "Wan2_1_VAE_bf16.safetensors",
+      "clip_name_1": "clip_vision_h.safetensors",
+      "image": ["2", 0]
+    },
+    "_meta": {"title": "SVI_CLIP_VAE_Models"}
+  },
+  "7": {
+    "class_type": "PathchSageAttentionKJ",
+    "inputs": {
+      "model": ["6", 0],
+      "attention_type": "auto",
+      "force_fp16_accumulate": false
+    },
+    "_meta": {"title": "SageAttention_High"}
+  },
+  "8": {
+    "class_type": "PathchSageAttentionKJ",
+    "inputs": {
+      "model": ["6", 1],
+      "attention_type": "auto",
+      "force_fp16_accumulate": false
+    },
+    "_meta": {"title": "SageAttention_Low"}
+  },
+  "9": {
+    "class_type": "ModelPatchTorchSettings",
+    "inputs": {
+      "model": ["7", 0],
+      "enable_fp16_accumulation": true
+    },
+    "_meta": {"title": "TorchSettings_High"}
+  },
+  "10": {
+    "class_type": "ModelPatchTorchSettings",
+    "inputs": {
+      "model": ["8", 0],
+      "enable_fp16_accumulation": true
+    },
+    "_meta": {"title": "TorchSettings_Low"}
+  },
+  "11": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": ["9", 0],
+      "shift": 5
+    },
+    "_meta": {"title": "ModelSampling_High"}
+  },
+  "12": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": ["10", 0],
+      "shift": 5
+    },
+    "_meta": {"title": "ModelSampling_Low"}
+  },
+  "13": {
+    "class_type": "Power Lora Loader (rgthree)",
+    "inputs": {
+      "model": ["11", 0],
+      "lora_01": {"on": true, "lora": "HIGH\\DR34ML4Y_I2V_14B_HIGH_V2.safetensors", "strength": 0.8, "strengthTwo": null},
+      "lora_02": {"on": true, "lora": "HIGH\\NSFW-22-H-e8.safetensors", "strength": 0.6, "strengthTwo": null},
+      "lora_03": {"on": false, "lora": "HIGH\\wan22-m4crom4sti4-i2v-20epoc-high-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
+      "lora_04": {"on": false, "lora": "HIGH\\jfj-deepthroat-W22-I2V-HN.safetensors", "strength": 0.6, "strengthTwo": null}
+    },
+    "_meta": {"title": "PowerLoraLoader_High"}
+  },
+  "14": {
+    "class_type": "Power Lora Loader (rgthree)",
+    "inputs": {
+      "model": ["12", 0],
+      "lora_01": {"on": true, "lora": "LOW\\DR34ML4Y_I2V_14B_LOW_V2.safetensors", "strength": 0.8, "strengthTwo": null},
+      "lora_02": {"on": true, "lora": "LOW\\NSFW-22-L-e8.safetensors", "strength": 0.6, "strengthTwo": null},
+      "lora_03": {"on": false, "lora": "LOW\\wan22-m4crom4sti4-i2v-20epoc-low-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
+      "lora_04": {"on": false, "lora": "LOW\\jfj-deepthroat-W22-I2V-LN.safetensors", "strength": 0.6, "strengthTwo": null}
+    },
+    "_meta": {"title": "PowerLoraLoader_Low"}
+  },
+  "15": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "d0gg1e, A woman is having doggy style sex",
+      "clip": ["6", 2]
+    },
+    "_meta": {"title": "Positive_Prompt"}
+  },
+  "16": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "watermark, text, subtitles, letterbox, pillarbox, frame, border, split screen, noise, artifacts, blur, vignette",
+      "clip": ["6", 2]
+    },
+    "_meta": {"title": "Negative_Prompt"}
+  },
+  "17": {
+    "class_type": "40d4748d-3539-4009-969f-2dfc1edc5e03",
+    "inputs": {
+      "vae": ["6", 3],
+      "model": ["13", 0],
+      "model_1": ["14", 0],
+      "start_image": ["2", 0],
+      "width": 720,
+      "height": 1072,
+      "length": 41,
+      "steps": 7,
+      "end_at_step": 3,
+      "positive": ["15", 0],
+      "negative": ["16", 0],
+      "clip_vision_start_image": ["6", 4],
+      "noise_seed": 42,
+      "structural_repulsion_boost": 1.0,
+      "svi_motion_strength": 1.0,
+      "frame_rate": 16.0
+    },
+    "_meta": {"title": "SVI_Sampler_1st_Section"}
+  },
+  "18": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "SVI_output",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": ["17", 0]
+    },
+    "_meta": {"title": "VideoCombine"}
+  }
+}

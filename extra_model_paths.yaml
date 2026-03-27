@@ -15,5 +15,9 @@ comfyui:
     loras: |
         models/loras/
         /runpod-volume/loras/
-    upscale_models: models/upscale_models/
+    text_encoders: models/text_encoders/
+    unet: models/unet/
+    upscale_models: |
+        models/upscale_models/
+        /runpod-volume/models/upscale_models/
     vae: models/vae/

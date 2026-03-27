@@ -38,9 +38,30 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     cd ComfyUI-WanVideoWrapper && pip3 install --no-cache-dir -r requirements.txt
 
+RUN cd /ComfyUI/custom_nodes && \
+    git clone https://github.com/rgthree/rgthree-comfy && \
+    cd rgthree-comfy && pip3 install --no-cache-dir -r requirements.txt
+
+RUN cd /ComfyUI/custom_nodes && \
+    git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts && \
+    cd ComfyUI-Custom-Scripts && pip3 install --no-cache-dir -r requirements.txt
+
+RUN cd /ComfyUI/custom_nodes && \
+    git clone https://github.com/wan22fmlf/ComfyUI-Wan22FMLF && \
+    cd ComfyUI-Wan22FMLF && pip3 install --no-cache-dir -r requirements.txt
+
+RUN cd /ComfyUI/custom_nodes && \
+    git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation && \
+    cd ComfyUI-Frame-Interpolation && pip3 install --no-cache-dir -r requirements.txt
+
+RUN cd /ComfyUI/custom_nodes && \
+    git clone https://github.com/yolain/ComfyUI-Easy-Use && \
+    cd ComfyUI-Easy-Use && pip3 install --no-cache-dir -r requirements.txt
+
 # Download all models in parallel (baked into image to avoid cold-start downloads)
 # ~40GB total — parallel downloads keep build under 30min limit
-RUN mkdir -p /ComfyUI/models/text_encoders && \
+RUN mkdir -p /ComfyUI/models/text_encoders /ComfyUI/models/upscale_models \
+    /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
@@ -55,12 +76,21 @@ RUN mkdir -p /ComfyUI/models/text_encoders && \
         -O /ComfyUI/models/text_encoders/umt5-xxl-enc-bf16.safetensors & \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors \
         -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors & \
+    wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth \
+        -O /ComfyUI/models/upscale_models/RealESRGAN_x2plus.pth & \
+    wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors \
+        -O /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors & \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_Lightx2v/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors \
+        -O /ComfyUI/models/loras/HIGH/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors & \
+    wget -q https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/main/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors \
+        -O /ComfyUI/models/loras/LOW/Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors & \
     wait
 
 # Copy our handler, workflow, and config
 WORKDIR /app
 COPY handler.py .
 COPY handler_core.py .
+COPY handler_svi.py .
 COPY workflow/ workflow/
 COPY extra_model_paths.yaml /ComfyUI/extra_model_paths.yaml
 COPY entrypoint.sh .
