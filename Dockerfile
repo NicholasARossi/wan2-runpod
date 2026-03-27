@@ -46,7 +46,7 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts
 
 RUN cd /ComfyUI/custom_nodes && \
-    git clone https://github.com/wan22fmlf/ComfyUI-Wan22FMLF
+    git clone https://github.com/wallen0322/ComfyUI-Wan22FMLF
 
 RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation
