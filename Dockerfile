@@ -55,22 +55,18 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/yolain/ComfyUI-Easy-Use && \
     cd ComfyUI-Easy-Use && pip3 install --no-cache-dir -r requirements.txt
 
-# Download all models in parallel (baked into image to avoid cold-start downloads)
-# ~40GB total — parallel downloads keep build under 30min limit
+# Download core models in parallel (baked into image to avoid cold-start downloads)
+# ~26GB total: 2x diffusion fp8 (15GB) + text encoder fp8 (6.7GB) + VAE (1GB) +
+#              clip_vision (1.2GB) + 2x Lightning LoRAs (1.3GB) + upscaler (64MB)
+# Removed: umt5-xxl-enc-bf16 (6.7GB, redundant with fp8), Seko Lightning (1GB, SVI uses v1030/v1022)
 RUN mkdir -p /ComfyUI/models/text_encoders /ComfyUI/models/upscale_models \
     /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & \
-    wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/high_noise_model.safetensors \
-        -O /ComfyUI/models/loras/high_noise_model.safetensors & \
-    wget -q https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-I2V-A14B-4steps-lora-rank64-Seko-V1/low_noise_model.safetensors \
-        -O /ComfyUI/models/loras/low_noise_model.safetensors & \
     wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors \
         -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors & \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors \
-        -O /ComfyUI/models/text_encoders/umt5-xxl-enc-bf16.safetensors & \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors \
         -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors & \
     wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth \
