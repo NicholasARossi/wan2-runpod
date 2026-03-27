@@ -43,16 +43,13 @@ RUN cd /ComfyUI/custom_nodes && \
     cd rgthree-comfy && pip3 install --no-cache-dir -r requirements.txt
 
 RUN cd /ComfyUI/custom_nodes && \
-    git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts && \
-    cd ComfyUI-Custom-Scripts && pip3 install --no-cache-dir -r requirements.txt
+    git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts
 
 RUN cd /ComfyUI/custom_nodes && \
-    git clone https://github.com/wan22fmlf/ComfyUI-Wan22FMLF && \
-    cd ComfyUI-Wan22FMLF && pip3 install --no-cache-dir -r requirements.txt
+    git clone https://github.com/wan22fmlf/ComfyUI-Wan22FMLF
 
 RUN cd /ComfyUI/custom_nodes && \
-    git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation && \
-    cd ComfyUI-Frame-Interpolation && pip3 install --no-cache-dir -r requirements.txt
+    git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation
 
 RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/yolain/ComfyUI-Easy-Use && \
