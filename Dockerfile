@@ -1,20 +1,19 @@
 # wan2-runpod: Wan 2.2 I2V RunPod Serverless Endpoint
-# Forked from wlsdml1114/generate_video, rewritten handler
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+# Uses same Blackwell-optimized base as LTX deployment (includes CUDA dev tools,
+# PyTorch, and RunPod-compatible infra). The runtime-only nvidia base was causing
+# worker crashes because ComfyUI custom nodes need CUDA compilation at startup.
+FROM wlsdml1114/engui_genai-base_blackwell:1.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# System deps
+# Extra system deps (base already has most)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git wget curl ffmpeg \
-    libgl1-mesa-glx libglib2.0-0 \
+    ffmpeg libgl1-mesa-glx libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir --upgrade pip
-
-# RunPod SDK + websocket
-RUN pip3 install --no-cache-dir runpod websocket-client
+# RunPod SDK + websocket (base may have runpod but ensure latest)
+RUN pip3 install --no-cache-dir --upgrade runpod websocket-client
 
 # ComfyUI
 WORKDIR /
