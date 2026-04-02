@@ -23,18 +23,26 @@
     },
     "_meta": {"title": "ImageResize"}
   },
-  "3": {
-    "class_type": "129378e3-d7f3-4d42-8b64-8458af618b1f",
+  "20": {
+    "class_type": "UNETLoader",
     "inputs": {
       "unet_name": "Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors",
-      "unet_name_1": "Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors"
+      "weight_dtype": "default"
     },
-    "_meta": {"title": "Safetensors_Models"}
+    "_meta": {"title": "UNETLoader_HIGH"}
+  },
+  "21": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {"title": "UNETLoader_LOW"}
   },
   "4": {
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
-      "model": ["3", 0],
+      "model": ["20", 0],
       "lora_name": "HIGH\\Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors",
       "strength_model": 1.0
     },
@@ -43,30 +51,64 @@
   "5": {
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
-      "model": ["3", 1],
+      "model": ["21", 0],
       "lora_name": "LOW\\Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
       "strength_model": 1.0
     },
     "_meta": {"title": "Lightx2v_Lora_Low"}
   },
-  "6": {
-    "class_type": "9f073b94-78a6-4851-9107-2606d7e3c50b",
+  "22": {
+    "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": ["4", 0],
-      "model_1": ["5", 0],
-      "lora_name_2": "HIGH\\SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
-      "lora_name_3": "LOW\\SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
+      "lora_name": "HIGH\\SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": {"title": "SVI_Lora_High"}
+  },
+  "23": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["5", 0],
+      "lora_name": "LOW\\SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": {"title": "SVI_Lora_Low"}
+  },
+  "30": {
+    "class_type": "CLIPLoader",
+    "inputs": {
       "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "vae_name": "Wan2_1_VAE_bf16.safetensors",
-      "clip_name_1": "clip_vision_h.safetensors",
+      "type": "wan"
+    },
+    "_meta": {"title": "CLIPLoader"}
+  },
+  "31": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "Wan2_1_VAE_bf16.safetensors"
+    },
+    "_meta": {"title": "VAELoader"}
+  },
+  "32": {
+    "class_type": "CLIPVisionLoader",
+    "inputs": {
+      "clip_name": "clip_vision_h.safetensors"
+    },
+    "_meta": {"title": "CLIPVisionLoader"}
+  },
+  "33": {
+    "class_type": "CLIPVisionEncode",
+    "inputs": {
+      "clip_vision": ["32", 0],
       "image": ["2", 0]
     },
-    "_meta": {"title": "SVI_CLIP_VAE_Models"}
+    "_meta": {"title": "CLIPVisionEncode"}
   },
   "7": {
     "class_type": "PathchSageAttentionKJ",
     "inputs": {
-      "model": ["6", 0],
+      "model": ["22", 0],
       "attention_type": "auto",
       "force_fp16_accumulate": false
     },
@@ -75,7 +117,7 @@
   "8": {
     "class_type": "PathchSageAttentionKJ",
     "inputs": {
-      "model": ["6", 1],
+      "model": ["23", 0],
       "attention_type": "auto",
       "force_fp16_accumulate": false
     },
@@ -139,7 +181,7 @@
     "class_type": "CLIPTextEncode",
     "inputs": {
       "text": "d0gg1e, A woman is having doggy style sex",
-      "clip": ["6", 2]
+      "clip": ["30", 0]
     },
     "_meta": {"title": "Positive_Prompt"}
   },
@@ -147,31 +189,87 @@
     "class_type": "CLIPTextEncode",
     "inputs": {
       "text": "watermark, text, subtitles, letterbox, pillarbox, frame, border, split screen, noise, artifacts, blur, vignette",
-      "clip": ["6", 2]
+      "clip": ["30", 0]
     },
     "_meta": {"title": "Negative_Prompt"}
   },
-  "17": {
-    "class_type": "40d4748d-3539-4009-969f-2dfc1edc5e03",
+  "40": {
+    "class_type": "WanAdvancedI2V",
     "inputs": {
-      "vae": ["6", 3],
-      "model": ["13", 0],
-      "model_1": ["14", 0],
-      "start_image": ["2", 0],
+      "positive": ["15", 0],
+      "negative": ["16", 0],
+      "vae": ["31", 0],
       "width": 720,
       "height": 1072,
       "length": 41,
-      "steps": 7,
-      "end_at_step": 3,
-      "positive": ["15", 0],
-      "negative": ["16", 0],
-      "clip_vision_start_image": ["6", 4],
-      "noise_seed": 42,
+      "batch_size": 1,
+      "mode": "NORMAL",
+      "long_video_mode": "SVI",
+      "continue_frames_count": 4,
+      "start_image": ["2", 0],
+      "enable_start_frame": true,
+      "high_noise_start_strength": 1.0,
+      "low_noise_start_strength": 1.0,
+      "enable_middle_frame": false,
+      "middle_frame_ratio": 0.5,
+      "high_noise_mid_strength": 0.8,
+      "low_noise_mid_strength": 0.2,
+      "enable_end_frame": false,
+      "low_noise_end_strength": 1.0,
       "structural_repulsion_boost": 1.0,
       "svi_motion_strength": 1.0,
-      "frame_rate": 16.0
+      "clip_vision_start_image": ["33", 0],
+      "video_frame_offset": 0
     },
-    "_meta": {"title": "SVI_Sampler_1st_Section"}
+    "_meta": {"title": "WanAdvancedI2V_SVI"}
+  },
+  "50": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": ["13", 0],
+      "add_noise": "enable",
+      "noise_seed": 42,
+      "control_after_generate": "fixed",
+      "steps": 7,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 3,
+      "return_with_leftover_noise": "enable",
+      "positive": ["40", 0],
+      "negative": ["40", 2],
+      "latent_image": ["40", 3]
+    },
+    "_meta": {"title": "KSampler_HIGH"}
+  },
+  "51": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": ["14", 0],
+      "add_noise": "disable",
+      "noise_seed": 42,
+      "control_after_generate": "fixed",
+      "steps": 7,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 3,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "positive": ["40", 1],
+      "negative": ["40", 2],
+      "latent_image": ["50", 0]
+    },
+    "_meta": {"title": "KSampler_LOW"}
+  },
+  "55": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["51", 0],
+      "vae": ["31", 0]
+    },
+    "_meta": {"title": "VAEDecode"}
   },
   "18": {
     "class_type": "VHS_VideoCombine",
@@ -186,7 +284,7 @@
       "trim_to_audio": true,
       "pingpong": false,
       "save_output": true,
-      "images": ["17", 0]
+      "images": ["55", 0]
     },
     "_meta": {"title": "VideoCombine"}
   }

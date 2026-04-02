@@ -1,35 +1,37 @@
 """
 SVI v1 handler for Kenpechi SVI workflow on RunPod serverless.
 ==============================================================
-Single-scene Wan 2.2 I2V using the SVI (Smooth Video Interpolation) sampler
-with Power Lora Loader (rgthree) for per-scene LoRA toggling.
+Single-scene Wan 2.2 I2V using WanAdvancedI2V (SVI mode) with
+Power Lora Loader (rgthree) for per-scene LoRA toggling.
 
-Workflow node map (svi_v1.json):
+Workflow node map (svi_v1.json) — expanded, no component nodes:
   1   LoadImage                — input image
   2   ImageResizeKJv2          — resize to internal dims (832x480)
-  3   Safetensors_Models       — load HIGH + LOW diffusion models (component)
+  20  UNETLoader               — HIGH diffusion model
+  21  UNETLoader               — LOW diffusion model
   4   LoraLoaderModelOnly      — Lightning distill HIGH (v1030)
   5   LoraLoaderModelOnly      — Lightning distill LOW (v1022)
-  6   SVI_CLIP_VAE_Models      — SVI LoRAs + CLIP + VAE + CLIP Vision (component)
+  22  LoraLoaderModelOnly      — SVI PRO HIGH LoRA
+  23  LoraLoaderModelOnly      — SVI PRO LOW LoRA
+  30  CLIPLoader               — text encoder (umt5 fp8)
+  31  VAELoader                — VAE (bf16)
+  32  CLIPVisionLoader         — CLIP vision model
+  33  CLIPVisionEncode         — encode image with CLIP vision
   7   PathchSageAttentionKJ    — sage attention HIGH
   8   PathchSageAttentionKJ    — sage attention LOW
-  9   ModelPatchTorchSettings   — fp16 accumulation HIGH
-  10  ModelPatchTorchSettings   — fp16 accumulation LOW
-  11  ModelSamplingSD3          — shift=5 HIGH
-  12  ModelSamplingSD3          — shift=5 LOW
-  13  Power Lora Loader         — scene LoRAs HIGH
-  14  Power Lora Loader         — scene LoRAs LOW
-  15  CLIPTextEncode            — positive prompt
-  16  CLIPTextEncode            — negative prompt
-  17  1st_Section SVI sampler   — main sampler (component)
-  18  VHS_VideoCombine          — encode to mp4
-
-Key differences from handler_core.py:
-  - SVI sampler instead of WanVideoSampler (7 steps, split at 3)
-  - Power Lora Loader (rgthree) instead of WanVideoLoraSelectMulti
-  - LoRA pairs use HIGH\\ and LOW\\ subdirectory paths
-  - ModelSamplingSD3 shift=5, SageAttention, fp16 accumulation
-  - No FreeNoise context options (SVI handles temporal coherence internally)
+  9   ModelPatchTorchSettings  — fp16 accumulation HIGH
+  10  ModelPatchTorchSettings  — fp16 accumulation LOW
+  11  ModelSamplingSD3         — shift=5 HIGH
+  12  ModelSamplingSD3         — shift=5 LOW
+  13  Power Lora Loader        — scene LoRAs HIGH
+  14  Power Lora Loader        — scene LoRAs LOW
+  15  CLIPTextEncode           — positive prompt
+  16  CLIPTextEncode           — negative prompt
+  40  WanAdvancedI2V           — SVI conditioning + latent (long_video_mode=SVI)
+  50  KSamplerAdvanced         — HIGH noise pass (steps 0→split)
+  51  KSamplerAdvanced         — LOW noise pass (steps split→end)
+  55  VAEDecode                — decode latents to images
+  18  VHS_VideoCombine         — encode to mp4
 """
 
 import os
@@ -156,16 +158,20 @@ def process_request(job_input: dict) -> dict:
     # Node 16: Negative prompt
     workflow["16"]["inputs"]["text"] = negative_prompt
 
-    # Node 17: SVI Sampler
-    workflow["17"]["inputs"]["width"] = width
-    workflow["17"]["inputs"]["height"] = height
-    workflow["17"]["inputs"]["length"] = length
-    workflow["17"]["inputs"]["steps"] = steps
-    workflow["17"]["inputs"]["end_at_step"] = split_step
-    workflow["17"]["inputs"]["noise_seed"] = seed
-    workflow["17"]["inputs"]["structural_repulsion_boost"] = repulsion_boost
-    workflow["17"]["inputs"]["svi_motion_strength"] = motion_strength
-    workflow["17"]["inputs"]["frame_rate"] = frame_rate
+    # Node 40: WanAdvancedI2V (SVI conditioning + latent)
+    workflow["40"]["inputs"]["width"] = width
+    workflow["40"]["inputs"]["height"] = height
+    workflow["40"]["inputs"]["length"] = length
+    workflow["40"]["inputs"]["structural_repulsion_boost"] = repulsion_boost
+    workflow["40"]["inputs"]["svi_motion_strength"] = motion_strength
+
+    # Nodes 50/51: KSamplerAdvanced (HIGH/LOW noise passes)
+    workflow["50"]["inputs"]["steps"] = steps
+    workflow["50"]["inputs"]["end_at_step"] = split_step
+    workflow["50"]["inputs"]["noise_seed"] = seed
+    workflow["51"]["inputs"]["steps"] = steps
+    workflow["51"]["inputs"]["start_at_step"] = split_step
+    workflow["51"]["inputs"]["noise_seed"] = seed
 
     # Node 18: Video output frame rate
     workflow["18"]["inputs"]["frame_rate"] = frame_rate
