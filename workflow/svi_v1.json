@@ -43,7 +43,7 @@
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": ["20", 0],
-      "lora_name": "HIGH\\Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors",
+      "lora_name": "HIGH/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors",
       "strength_model": 1.0
     },
     "_meta": {"title": "Lightx2v_Lora_High"}
@@ -52,7 +52,7 @@
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": ["21", 0],
-      "lora_name": "LOW\\Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+      "lora_name": "LOW/Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
       "strength_model": 1.0
     },
     "_meta": {"title": "Lightx2v_Lora_Low"}
@@ -61,7 +61,7 @@
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": ["4", 0],
-      "lora_name": "HIGH\\SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
+      "lora_name": "HIGH/SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
       "strength_model": 1.0
     },
     "_meta": {"title": "SVI_Lora_High"}
@@ -70,7 +70,7 @@
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": ["5", 0],
-      "lora_name": "LOW\\SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
+      "lora_name": "LOW/SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
       "strength_model": 1.0
     },
     "_meta": {"title": "SVI_Lora_Low"}
@@ -101,7 +101,8 @@
     "class_type": "CLIPVisionEncode",
     "inputs": {
       "clip_vision": ["32", 0],
-      "image": ["2", 0]
+      "image": ["2", 0],
+      "crop": "center"
     },
     "_meta": {"title": "CLIPVisionEncode"}
   },
@@ -110,7 +111,8 @@
     "inputs": {
       "model": ["22", 0],
       "attention_type": "auto",
-      "force_fp16_accumulate": false
+      "force_fp16_accumulate": false,
+      "sage_attention": true
     },
     "_meta": {"title": "SageAttention_High"}
   },
@@ -119,7 +121,8 @@
     "inputs": {
       "model": ["23", 0],
       "attention_type": "auto",
-      "force_fp16_accumulate": false
+      "force_fp16_accumulate": false,
+      "sage_attention": true
     },
     "_meta": {"title": "SageAttention_Low"}
   },
@@ -159,10 +162,10 @@
     "class_type": "Power Lora Loader (rgthree)",
     "inputs": {
       "model": ["11", 0],
-      "lora_01": {"on": true, "lora": "HIGH\\DR34ML4Y_I2V_14B_HIGH_V2.safetensors", "strength": 0.8, "strengthTwo": null},
-      "lora_02": {"on": true, "lora": "HIGH\\NSFW-22-H-e8.safetensors", "strength": 0.6, "strengthTwo": null},
-      "lora_03": {"on": false, "lora": "HIGH\\wan22-m4crom4sti4-i2v-20epoc-high-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
-      "lora_04": {"on": false, "lora": "HIGH\\jfj-deepthroat-W22-I2V-HN.safetensors", "strength": 0.6, "strengthTwo": null}
+      "lora_01": {"on": true, "lora": "HIGH/DR34ML4Y_I2V_14B_HIGH_V2.safetensors", "strength": 0.8, "strengthTwo": null},
+      "lora_02": {"on": true, "lora": "HIGH/NSFW-22-H-e8.safetensors", "strength": 0.6, "strengthTwo": null},
+      "lora_03": {"on": false, "lora": "HIGH/wan22-m4crom4sti4-i2v-20epoc-high-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
+      "lora_04": {"on": false, "lora": "HIGH/jfj-deepthroat-W22-I2V-HN.safetensors", "strength": 0.6, "strengthTwo": null}
     },
     "_meta": {"title": "PowerLoraLoader_High"}
   },
@@ -170,10 +173,10 @@
     "class_type": "Power Lora Loader (rgthree)",
     "inputs": {
       "model": ["12", 0],
-      "lora_01": {"on": true, "lora": "LOW\\DR34ML4Y_I2V_14B_LOW_V2.safetensors", "strength": 0.8, "strengthTwo": null},
-      "lora_02": {"on": true, "lora": "LOW\\NSFW-22-L-e8.safetensors", "strength": 0.6, "strengthTwo": null},
-      "lora_03": {"on": false, "lora": "LOW\\wan22-m4crom4sti4-i2v-20epoc-low-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
-      "lora_04": {"on": false, "lora": "LOW\\jfj-deepthroat-W22-I2V-LN.safetensors", "strength": 0.6, "strengthTwo": null}
+      "lora_01": {"on": true, "lora": "LOW/DR34ML4Y_I2V_14B_LOW_V2.safetensors", "strength": 0.8, "strengthTwo": null},
+      "lora_02": {"on": true, "lora": "LOW/NSFW-22-L-e8.safetensors", "strength": 0.6, "strengthTwo": null},
+      "lora_03": {"on": false, "lora": "LOW/wan22-m4crom4sti4-i2v-20epoc-low-k3nk.safetensors", "strength": 0.3, "strengthTwo": null},
+      "lora_04": {"on": false, "lora": "LOW/jfj-deepthroat-W22-I2V-LN.safetensors", "strength": 0.6, "strengthTwo": null}
     },
     "_meta": {"title": "PowerLoraLoader_Low"}
   },
