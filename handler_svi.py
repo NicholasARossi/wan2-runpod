@@ -150,7 +150,9 @@ def process_request(job_input: dict) -> dict:
     # Node 1: LoadImage
     workflow["1"]["inputs"]["image"] = image_path
 
-    # Node 2: ImageResizeKJv2 (internal resize — keep defaults)
+    # Node 2: ImageResizeKJv2 — match output dimensions so ref isn't cropped
+    workflow["2"]["inputs"]["width"] = width
+    workflow["2"]["inputs"]["height"] = height
 
     # Node 15: Positive prompt
     workflow["15"]["inputs"]["text"] = prompt_text
