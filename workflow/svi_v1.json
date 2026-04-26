@@ -26,7 +26,7 @@
   "20": {
     "class_type": "UNETLoader",
     "inputs": {
-      "unet_name": "Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors",
+      "unet_name": "wan22EnhancedNSFWSVICamera_nolightningSVICfFp8H.safetensors",
       "weight_dtype": "default"
     },
     "_meta": {"title": "UNETLoader_HIGH"}
@@ -34,7 +34,7 @@
   "21": {
     "class_type": "UNETLoader",
     "inputs": {
-      "unet_name": "Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors",
+      "unet_name": "wan22EnhancedNSFWSVICamera_nolightningSVICfFp8L.safetensors",
       "weight_dtype": "default"
     },
     "_meta": {"title": "UNETLoader_LOW"}
@@ -57,24 +57,7 @@
     },
     "_meta": {"title": "Lightx2v_Lora_Low"}
   },
-  "22": {
-    "class_type": "LoraLoaderModelOnly",
-    "inputs": {
-      "model": ["4", 0],
-      "lora_name": "HIGH/SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors",
-      "strength_model": 1.0
-    },
-    "_meta": {"title": "SVI_Lora_High"}
-  },
-  "23": {
-    "class_type": "LoraLoaderModelOnly",
-    "inputs": {
-      "model": ["5", 0],
-      "lora_name": "LOW/SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors",
-      "strength_model": 1.0
-    },
-    "_meta": {"title": "SVI_Lora_Low"}
-  },
+  "_comment_22_23": "SVI_v2_PRO LoRA nodes removed — model flows directly from lightx2v (4/5) to SageAttention (7/8)",
   "30": {
     "class_type": "CLIPLoader",
     "inputs": {
@@ -109,7 +92,7 @@
   "7": {
     "class_type": "PathchSageAttentionKJ",
     "inputs": {
-      "model": ["22", 0],
+      "model": ["4", 0],
       "attention_type": "auto",
       "force_fp16_accumulate": false,
       "sage_attention": "auto"
@@ -119,7 +102,7 @@
   "8": {
     "class_type": "PathchSageAttentionKJ",
     "inputs": {
-      "model": ["23", 0],
+      "model": ["5", 0],
       "attention_type": "auto",
       "force_fp16_accumulate": false,
       "sage_attention": "auto"
