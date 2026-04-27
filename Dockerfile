@@ -59,8 +59,8 @@ RUN cd /ComfyUI/custom_nodes && \
 # ~30GB total: 2x Kijai base fp8 (27GB) + text encoder fp8 (6.7GB) + VAE (1GB) +
 #              clip_vision (1.2GB) + 2x Lightning LoRAs (1.3GB) + upscaler (64MB)
 # Base model: Kijai Wan2.2 I2V A14B fp8 (HuggingFace, no auth needed)
-RUN mkdir -p /ComfyUI/models/text_encoders /ComfyUI/models/upscale_models \
-    /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
+RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/text_encoders \
+    /ComfyUI/models/upscale_models /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
     wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
@@ -78,6 +78,13 @@ RUN mkdir -p /ComfyUI/models/text_encoders /ComfyUI/models/upscale_models \
     wget -q https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/main/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors \
         -O /ComfyUI/models/loras/LOW/Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors & \
     wait
+
+# Verify critical model downloads (fail build if any are missing/empty)
+RUN test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors && \
+    test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors && \
+    test -s /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors && \
+    echo "All model downloads verified" || \
+    (echo "FATAL: Model download failed" && ls -la /ComfyUI/models/diffusion_models/ && exit 1)
 
 # Copy our handler, workflow, and config
 WORKDIR /app
