@@ -10,7 +10,8 @@ comfyui:
     diffusion_models: |
         models/diffusion_models
         models/unet
-        /runpod-volume/models/
+        /runpod-volume/models/diffusion_models/
+        /runpod-volume/ComfyUI/models/diffusion_models/
     embeddings: models/embeddings/
     loras: |
         models/loras/
