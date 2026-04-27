@@ -55,36 +55,40 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/yolain/ComfyUI-Easy-Use && \
     cd ComfyUI-Easy-Use && pip3 install --no-cache-dir -r requirements.txt
 
-# Download core models in parallel (baked into image to avoid cold-start downloads)
+# Cache-bust: force re-download of models (previous builds had silent wget failures)
+ARG MODEL_CACHE_BUST=v2
+
+# Download core models with curl -fL (fails properly on HTTP errors, unlike wget -q)
 # ~30GB total: 2x Kijai base fp8 (27GB) + text encoder fp8 (6.7GB) + VAE (1GB) +
 #              clip_vision (1.2GB) + 2x Lightning LoRAs (1.3GB) + upscaler (64MB)
-# Base model: Kijai Wan2.2 I2V A14B fp8 (HuggingFace, no auth needed)
 RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/text_encoders \
-    /ComfyUI/models/upscale_models /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
-        -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
-        -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & \
-    wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors \
-        -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors & \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors \
-        -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors & \
-    wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth \
-        -O /ComfyUI/models/upscale_models/RealESRGAN_x2plus.pth & \
-    wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors \
-        -O /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors & \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_Lightx2v/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors \
-        -O /ComfyUI/models/loras/HIGH/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors & \
-    wget -q https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/main/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors \
-        -O /ComfyUI/models/loras/LOW/Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors & \
-    wait
+    /ComfyUI/models/upscale_models /ComfyUI/models/clip_vision \
+    /ComfyUI/models/vae /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
+    curl -fL -o /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
+        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & P1=$! ; \
+    curl -fL -o /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
+        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & P2=$! ; \
+    curl -fL -o /ComfyUI/models/clip_vision/clip_vision_h.safetensors \
+        https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors & P3=$! ; \
+    curl -fL -o /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors \
+        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors & P4=$! ; \
+    curl -fL -o /ComfyUI/models/upscale_models/RealESRGAN_x2plus.pth \
+        https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth & P5=$! ; \
+    curl -fL -o /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors \
+        https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors & P6=$! ; \
+    curl -fL -o /ComfyUI/models/loras/HIGH/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors \
+        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_Lightx2v/Wan_2_2_I2V_A14B_HIGH_lightx2v_4step_lora_v1030_rank_64_bf16.safetensors & P7=$! ; \
+    curl -fL -o /ComfyUI/models/loras/LOW/Wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors \
+        https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/main/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors & P8=$! ; \
+    wait $P1 && wait $P2 && wait $P3 && wait $P4 && wait $P5 && wait $P6 && wait $P7 && wait $P8 && \
+    echo "All model downloads complete"
 
 # Verify critical model downloads (fail build if any are missing/empty)
-RUN test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors && \
+RUN ls -lh /ComfyUI/models/diffusion_models/ && \
+    test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors && \
     test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors && \
     test -s /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors && \
-    echo "All model downloads verified" || \
-    (echo "FATAL: Model download failed" && ls -la /ComfyUI/models/diffusion_models/ && exit 1)
+    echo "All model downloads verified"
 
 # Copy our handler, workflow, and config
 WORKDIR /app
