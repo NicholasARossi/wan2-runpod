@@ -26,7 +26,7 @@
   "20": {
     "class_type": "UNETLoader",
     "inputs": {
-      "unet_name": "wan22EnhancedNSFWSVICamera_nolightningSVICfFp8H.safetensors",
+      "unet_name": "Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors",
       "weight_dtype": "default"
     },
     "_meta": {"title": "UNETLoader_HIGH"}
@@ -34,7 +34,7 @@
   "21": {
     "class_type": "UNETLoader",
     "inputs": {
-      "unet_name": "wan22EnhancedNSFWSVICamera_nolightningSVICfFp8L.safetensors",
+      "unet_name": "Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors",
       "weight_dtype": "default"
     },
     "_meta": {"title": "UNETLoader_LOW"}

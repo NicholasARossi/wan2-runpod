@@ -56,14 +56,14 @@ RUN cd /ComfyUI/custom_nodes && \
     cd ComfyUI-Easy-Use && pip3 install --no-cache-dir -r requirements.txt
 
 # Download core models in parallel (baked into image to avoid cold-start downloads)
-# ~26GB total: 2x diffusion fp8 (15GB) + text encoder fp8 (6.7GB) + VAE (1GB) +
+# ~30GB total: 2x Kijai base fp8 (27GB) + text encoder fp8 (6.7GB) + VAE (1GB) +
 #              clip_vision (1.2GB) + 2x Lightning LoRAs (1.3GB) + upscaler (64MB)
-# Removed: umt5-xxl-enc-bf16 (6.7GB, redundant with fp8), Seko Lightning (1GB, SVI uses v1030/v1022)
+# Base model: Kijai Wan2.2 I2V A14B fp8 (HuggingFace, no auth needed)
 RUN mkdir -p /ComfyUI/models/text_encoders /ComfyUI/models/upscale_models \
     /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & \
-    wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
+    wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
         -O /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & \
     wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors \
         -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors & \
