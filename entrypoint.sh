@@ -8,7 +8,7 @@ df -h / 2>/dev/null | tail -1
 echo "Python: $(python3 --version 2>&1)"
 
 echo "Starting ComfyUI in background..."
-python3 /ComfyUI/main.py --listen --use-sage-attention --disable-mmap 2>&1 | tee /tmp/comfyui.log &
+python3 /ComfyUI/main.py --listen --use-sage-attention 2>&1 | tee /tmp/comfyui.log &
 COMFY_PID=$!
 echo "ComfyUI PID: $COMFY_PID"
 
