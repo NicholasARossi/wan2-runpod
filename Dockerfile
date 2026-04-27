@@ -65,9 +65,9 @@ RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/text_encoders \
     /ComfyUI/models/upscale_models /ComfyUI/models/clip_vision \
     /ComfyUI/models/vae /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
     curl -fL -o /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors \
-        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & P1=$! ; \
+        https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors & P1=$! ; \
     curl -fL -o /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors \
-        https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & P2=$! ; \
+        https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors & P2=$! ; \
     curl -fL -o /ComfyUI/models/clip_vision/clip_vision_h.safetensors \
         https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors & P3=$! ; \
     curl -fL -o /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors \
