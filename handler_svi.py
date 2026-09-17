@@ -65,10 +65,28 @@ SVI_DEFAULTS = {
     "split_step": 3,
     "shift": 5,
     "frame_rate": 16.0,
-    "duration_seconds": 2.5,
+    "duration_seconds": 5.0,
     "structural_repulsion_boost": 1.0,
     "svi_motion_strength": 1.0,
 }
+
+
+def snap_frame_count(length: int) -> int:
+    """Snap frame count to nearest valid 4N+1 value.
+
+    Wan 2.2 requires frame counts of the form 4N+1 (5, 9, 13, ..., 41, 65, 81, 97, 129).
+    If the input isn't valid, snap to the nearest valid count and log a warning.
+    """
+    if (length - 1) % 4 == 0:
+        return length
+    lower = ((length - 1) // 4) * 4 + 1
+    upper = lower + 4
+    snapped = lower if (length - lower) <= (upper - length) else upper
+    snapped = max(snapped, 5)  # minimum 5 frames
+    logger.warning(
+        "Frame count %d is not 4N+1, snapping to %d", length, snapped
+    )
+    return snapped
 
 
 def build_lora_slot(filename, strength, on=True):
@@ -98,6 +116,10 @@ def process_request(job_input: dict) -> dict:
             [{"high": "HIGH\\filename.safetensors", "low": "LOW\\filename.safetensors",
               "high_weight": 0.8, "low_weight": 0.8, "on": true}]
             Max 4 pairs per noise path.
+        end_image_base64: base64-encoded end frame for FLF (First-Last Frame) looping.
+            When provided, enables seamless loops by conditioning the model to return
+            to the end frame pose. Injects LoadImage + ImageResizeKJv2 nodes dynamically.
+        low_noise_end_strength: strength for end-frame conditioning (default 1.0)
     """
     import uuid
     task_id = f"task_{uuid.uuid4()}"
@@ -136,8 +158,9 @@ def process_request(job_input: dict) -> dict:
                                            SVI_DEFAULTS["svi_motion_strength"]))
     lora_pairs = job_input.get("lora_pairs", [])
 
-    # Calculate frame count: duration * frame_rate + 1
+    # Calculate frame count: duration * frame_rate + 1, snap to valid 4N+1
     length = int(duration * frame_rate) + 1
+    length = snap_frame_count(length)
 
     logger.info(
         "SVI params: %dx%d, %.1fs (%d frames), %d steps (split %d), seed=%d, %d LoRAs",
@@ -227,6 +250,56 @@ def process_request(job_input: dict) -> dict:
                 existing = workflow["14"]["inputs"][slot_key]
                 if isinstance(existing, dict):
                     existing["on"] = False
+
+    # FLF (First-Last Frame) looping — inject end image nodes if provided
+    end_image_b64 = job_input.get("end_image_base64")
+    if end_image_b64:
+        end_image_path, error = resolve_image(
+            {"image_base64": end_image_b64}, f"{task_id}_end"
+        )
+        if error:
+            logger.error("End image resolution failed: %s", error)
+            return {"error": f"end_image error: {error}"}
+
+        low_noise_end = float(job_input.get("low_noise_end_strength", 1.0))
+
+        # Inject node 60: LoadImage for end frame
+        workflow["60"] = {
+            "class_type": "LoadImage",
+            "inputs": {
+                "image": end_image_path,
+                "upload": "image",
+            },
+            "_meta": {"title": "LoadImage_EndFrame"},
+        }
+
+        # Inject node 61: ImageResizeKJv2 for end frame (same settings as node 2)
+        workflow["61"] = {
+            "class_type": "ImageResizeKJv2",
+            "inputs": {
+                "image": ["60", 0],
+                "width": width,
+                "height": height,
+                "upscale_method": "lanczos",
+                "keep_proportion": "crop",
+                "pad_color": "0, 0, 0",
+                "crop_position": "center",
+                "divisible_by": 2,
+                "device": "cpu",
+                "per_batch": 0,
+            },
+            "_meta": {"title": "ImageResize_EndFrame"},
+        }
+
+        # Wire end image into WanAdvancedI2V node 40
+        workflow["40"]["inputs"]["end_image"] = ["61", 0]
+        workflow["40"]["inputs"]["enable_end_frame"] = True
+        workflow["40"]["inputs"]["low_noise_end_strength"] = low_noise_end
+
+        logger.info(
+            "FLF enabled: end_image injected (nodes 60+61), "
+            "low_noise_end_strength=%.2f", low_noise_end
+        )
 
     # Connect to ComfyUI and run
     ws_url = f"ws://{server_address}:8188/ws?clientId={client_id}"

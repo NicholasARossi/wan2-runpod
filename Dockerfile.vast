@@ -1,19 +1,19 @@
-# wan2-runpod: Wan 2.2 I2V RunPod Serverless Endpoint
-# Uses same Blackwell-optimized base as LTX deployment (includes CUDA dev tools,
-# PyTorch, and RunPod-compatible infra). The runtime-only nvidia base was causing
-# worker crashes because ComfyUI custom nodes need CUDA compilation at startup.
-FROM wlsdml1114/engui_genai-base_blackwell:1.1
+# wan2-vast: Wan 2.2 I2V Vast.ai Endpoint (Ada/L40S)
+# Based on Dockerfile.ada — same models, nodes, and SVI workflow.
+# Flask handler instead of RunPod SDK. Targets L40S @ ~$0.53/hr on Vast.ai.
+FROM wlsdml1114/engui_genai-base_ada:1.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+ENV HANDLER_MODE=svi
 
 # Extra system deps (base already has most)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg libgl1-mesa-glx libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# RunPod SDK + websocket (base may have runpod but ensure latest)
-RUN pip3 install --no-cache-dir --upgrade runpod websocket-client
+# Flask + websocket (replaces RunPod SDK)
+RUN pip3 install --no-cache-dir flask websocket-client
 
 # ComfyUI
 WORKDIR /
@@ -21,7 +21,7 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git && \
     cd /ComfyUI && \
     pip3 install --no-cache-dir -r requirements.txt
 
-# Custom nodes
+# Custom nodes (same set as Dockerfile.ada — all needed for SVI workflow)
 RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/city96/ComfyUI-GGUF && \
     cd ComfyUI-GGUF && pip3 install --no-cache-dir -r requirements.txt
@@ -55,9 +55,8 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/yolain/ComfyUI-Easy-Use && \
     cd ComfyUI-Easy-Use && pip3 install --no-cache-dir -r requirements.txt
 
-# Download ALL models in parallel (~36GB baked into image to avoid NV dependency)
-# Base diffusion models (2x ~7.5GB fp8), text encoder (~6.7GB), VAE (~1GB),
-# clip_vision (~1.2GB), upscaler (~64MB), 2x Lightning LoRAs (~1.3GB)
+# Download ALL models in parallel (~36GB baked into image)
+# Same model set as Dockerfile.ada with HIGH/LOW LoRA subdirs for SVI
 RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/text_encoders \
     /ComfyUI/models/upscale_models /ComfyUI/models/clip_vision \
     /ComfyUI/models/vae /ComfyUI/models/loras/HIGH /ComfyUI/models/loras/LOW && \
@@ -80,7 +79,7 @@ RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/text_encoders \
     wait $P1 && wait $P2 && wait $P3 && wait $P4 && wait $P5 && wait $P6 && wait $P7 && wait $P8 && \
     echo "All model downloads complete"
 
-# Verify critical model downloads (including base diffusion models)
+# Verify critical model downloads
 RUN test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors && \
     test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors && \
     test -s /ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors && \
@@ -88,14 +87,16 @@ RUN test -s /ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_sca
     test -s /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors && \
     echo "All baked model downloads verified"
 
-# Copy our handler, workflow, and config
+# Copy handler (Flask + SVI dispatch), workflow, and config
 WORKDIR /app
-COPY handler.py .
+COPY handler_vast.py .
 COPY handler_core.py .
 COPY handler_svi.py .
 COPY workflow/ workflow/
 COPY extra_model_paths.yaml /ComfyUI/extra_model_paths.yaml
-COPY entrypoint.sh .
-RUN chmod +x /app/entrypoint.sh
+COPY entrypoint_vast.sh .
+RUN chmod +x /app/entrypoint_vast.sh
 
-CMD ["/app/entrypoint.sh"]
+EXPOSE 18000
+
+CMD ["/app/entrypoint_vast.sh"]
