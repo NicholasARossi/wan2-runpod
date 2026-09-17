@@ -12,8 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg libgl1-mesa-glx libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Flask + websocket (replaces RunPod SDK)
-RUN pip3 install --no-cache-dir flask websocket-client
+# Flask + websocket (replaces RunPod SDK). --ignore-installed: the base image
+# has a distutils-installed blinker 1.4 that pip cannot uninstall.
+RUN pip3 install --no-cache-dir --ignore-installed flask websocket-client blinker
 
 # ComfyUI
 WORKDIR /
